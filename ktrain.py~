@@ -1,0 +1,19 @@
+
+#--------------------------------------------------------------------------------------------
+def findPlace(vals):
+    places = open('./place.csv', 'r')
+    for place in places:
+        print place
+    return
+    
+
+#--------------------------------------------------------------------------------------------
+log = open('./gps.log', 'r')
+
+for line in log:
+    #print line
+    vals = line.split(',')
+    #print vals
+    findPlace(vals)
+    
+
