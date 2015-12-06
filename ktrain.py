@@ -1,5 +1,7 @@
 import math
 import random
+import RPi.GPIO as GPIO
+import time
 
 _counter = 0;
 _p_idx = -1
@@ -8,6 +10,10 @@ _log = open('./gps.log', 'r')
 _unit_state = [False] * 16
 _anime = 0
 _anime_type = 0
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
 
 #--------------------------------------------------------------------------------------------
 def getDistance(lon_a, lat_a, lon_b, lat_b):
@@ -46,7 +52,12 @@ def findPlace(lon, lat):
 
 #--------------------------------------------------------------------------------------------
 def isSwitchPressed():
+
+    input_state = GPIO.input(18)
+    if input_state == False:
+        print('Button Pressed')
     return False
+
 
 #--------------------------------------------------------------------------------------------
 def animate():
@@ -131,7 +142,7 @@ def mainloop():
                 changeState()
                 playSound(_p_idx)
 
-    animate()
+    #animate()
     return
 
 #--------------------------------------------------------------------------------------------
