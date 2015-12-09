@@ -3,21 +3,38 @@ import random
 import RPi.GPIO as GPIO
 import time
 from gps import *
+import threading
 
-_debug = False
+_debug = True
 _counter = 0
 _p_idx = -1
 _log = open('./gps.log', 'r')
 
 _unit_state = [False] * 16
 _anime = 0
-_anime_type = 1
+_anime_type = -1
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-_session = gps()
-_session.stream(WATCH_ENABLE|WATCH_NEWSTYLE)
+#--------------------------------------------------------------------------------------------
+class GpsPoller(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.session = gps(mode=WATCH_ENABLE)
+        self.current_value = None
+
+    def get_current_value(self):
+        return self.current_value
+
+    def run(self):
+        try:
+            while True:
+                self.current_value = self.session.next()
+                time.sleep(5) # tune this, you might not get values that quickly
+        except StopIteration:
+            pass
 
 #--------------------------------------------------------------------------------------------
 def getDistance(lon_a, lat_a, lon_b, lat_b):
@@ -142,7 +159,6 @@ def animate():
                     else:
                         _unit_state[idx] = False
 
-
     #print _unit_state
     for st in _unit_state:
         if st == True: print '*',
@@ -158,6 +174,7 @@ def checkPlace():
     global _debug
     global _log
     global _session
+    global _gpsp
 
     if _debug:
         line = _log.readline()
@@ -167,8 +184,9 @@ def checkPlace():
         else :
             return -1
     else:
-        report = _session.next()
-        if report.keys()[0] == 'epx' :
+        report = _gpsp.get_current_value();
+        #report = _session.next()
+        if report and report.keys()[0] == 'epx' :
             return findPlace(report['lon'], report['lat'])
         else:
             return -1
@@ -214,7 +232,7 @@ def mainloop():
         changeState()
         playSound(-1)
     else:
-        if _counter % 1 == 0: #TODO
+        if _counter % 5 == 0: #TODO
             #print 'check position'
             p_idx = checkPlace()
             if p_idx > 0 and _p_idx != p_idx:
@@ -233,6 +251,9 @@ def init():
 #--------------------------------------------------------------------------------------------
 # entry point
 
+_gpsp = GpsPoller()
+_gpsp.daemon = True
+_gpsp.start()
 init()
 while True:
     mainloop()
