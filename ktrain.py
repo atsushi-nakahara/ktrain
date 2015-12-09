@@ -9,7 +9,7 @@ _log = open('./gps.log', 'r')
 
 _unit_state = [False] * 16
 _anime = 0
-_anime_type = 2
+_anime_type = -1
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -100,7 +100,45 @@ def animate():
                     else:
                         _unit_state[idx] = False
                     
-    
+    elif _anime_type == 3: #cross
+        if _anime % speed == 0:
+            i = (_anime / speed) % 8
+            if i==0 and _anime > speed * 8 * 4:
+                resetState()
+            else:
+                _unit_state[i] = True
+                _unit_state[15-i] = True
+                i -= 2
+                if i < 0: i += 8
+                _unit_state[i] = False
+                _unit_state[15-i] = False
+
+    elif _anime_type == 4: #rcross
+        if _anime % speed == 0:
+            i = (_anime / speed) % 8
+            if i==0 and _anime > speed * 8 * 4:
+                resetState()
+            else:
+                i = 7-i
+                _unit_state[i] = True
+                _unit_state[15-i] = True
+                i += 2
+                if i > 7: i -= 8
+                _unit_state[i] = False
+                _unit_state[15-i] = False
+
+    elif _anime_type == 5: #random
+        speed = 10
+        if _anime % speed == 0:
+            if _anime > speed * 10:
+                resetState()
+            else:
+                for idx in range(0, len(_unit_state)):
+                    if random.randint(0, 1)==0:
+                        _unit_state[idx] = True
+                    else:
+                        _unit_state[idx] = False
+
 
     #print _unit_state
     for st in _unit_state:
@@ -110,7 +148,7 @@ def animate():
 
     _anime += 1
     return
-
+1
 #--------------------------------------------------------------------------------------------
 def checkPlace():
     global _log
@@ -140,7 +178,7 @@ def changeState():
     global _anime_type
 
     _anime = 0
-    _anime_type = random.randint(0, 1) #todo
+    _anime_type = random.randint(0, 5) #todo
     print 'changeState {0}'.format(_anime_type) 
     return
 
@@ -163,7 +201,7 @@ def mainloop():
         changeState()
         playSound(-1)
     else:
-        if _counter % 500 == 0: #TODO
+        if _counter % 1 == 0: #TODO
             #print 'check position'
             p_idx = checkPlace()
             if p_idx > 0 and _p_idx != p_idx:
@@ -172,7 +210,7 @@ def mainloop():
                 changeState()
                 playSound(_p_idx)
 
-    animate()
+    #animate()
     return
 
 #--------------------------------------------------------------------------------------------
