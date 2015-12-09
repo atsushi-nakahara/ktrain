@@ -2,18 +2,22 @@ import math
 import random
 import RPi.GPIO as GPIO
 import time
+from gps import *
 
-_counter = 0;
+_debug = False
+_counter = 0
 _p_idx = -1
 _log = open('./gps.log', 'r')
 
 _unit_state = [False] * 16
 _anime = 0
-_anime_type = -1
+_anime_type = 1
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
+_session = gps()
+_session.stream(WATCH_ENABLE|WATCH_NEWSTYLE)
 
 #--------------------------------------------------------------------------------------------
 def getDistance(lon_a, lat_a, lon_b, lat_b):
@@ -25,12 +29,8 @@ def getDistance(lon_a, lat_a, lon_b, lat_b):
 
     from_x = lon_a * math.pi / 180;
     from_y = lat_a * math.pi / 180;
-    #to_x = lon_b * math.pi / 180;
-    #to_y = lat_b * math.pi / 180;
-    to_y = lon_b * math.pi / 180;
-    to_x = lat_b * math.pi / 180;
-
-    #print str(from_x) +' '+ str(from_y) +' '+ str(to_x) +' '+  str(to_y)
+    to_x = lon_b * math.pi / 180;
+    to_y = lat_b * math.pi / 180;
 
     deg = math.sin(from_y) * math.sin(to_y) + math.cos(from_y) * math.cos(to_y) * math.cos(to_x - from_x);
     dist = 6378140 * (math.atan( - deg / math.sqrt(-deg * deg + 1)) + math.pi / 2);
@@ -38,6 +38,9 @@ def getDistance(lon_a, lat_a, lon_b, lat_b):
 
 #--------------------------------------------------------------------------------------------
 def findPlace(lon, lat):
+
+    #print '{0} {1}'.format(lon, lat)
+
     places = open('./places.csv', 'r')
     for place in places:
         #print place
@@ -151,14 +154,24 @@ def animate():
 1
 #--------------------------------------------------------------------------------------------
 def checkPlace():
-    global _log
-    line = _log.readline()
-    if line:
-        vals = line.split(',')
-        return findPlace(vals[0], vals[1])
-    else :
-        return -1
 
+    global _debug
+    global _log
+    global _session
+
+    if _debug:
+        line = _log.readline()
+        if line:
+            vals = line.split(',')
+            return findPlace(vals[1], vals[0])
+        else :
+            return -1
+    else:
+        report = _session.next()
+        if report.keys()[0] == 'epx' :
+            return findPlace(report['lon'], report['lat'])
+        else:
+            return -1
 
 #--------------------------------------------------------------------------------------------
 def resetState():
@@ -210,7 +223,7 @@ def mainloop():
                 changeState()
                 playSound(_p_idx)
 
-    #animate()
+    animate()
     return
 
 #--------------------------------------------------------------------------------------------
