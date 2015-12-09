@@ -1,3 +1,5 @@
+#!/usr/bin/python
+from Adafruit_PWM_Servo_Driver import PWM
 import math
 import random
 import RPi.GPIO as GPIO
@@ -11,11 +13,14 @@ _p_idx = -1
 _log = open('./gps.log', 'r')
 
 _unit_state = [False] * 16
+_prev_unit_state = [True] * 16
 _anime = 0
 _anime_type = -1
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+_pwm = PWM(0x40)
 
 #--------------------------------------------------------------------------------------------
 class GpsPoller(threading.Thread):
@@ -80,6 +85,7 @@ def isSwitchPressed():
 #--------------------------------------------------------------------------------------------
 def animate():
     global _unit_state
+    global _prev_unit_state
     global _anime
     global _anime_type
     i = 0
@@ -165,9 +171,27 @@ def animate():
         if st == False: print '_',
     print ''
 
+    for idx in range(0, len(_unit_state)):
+        if  not(_unit_state[idx] == _prev_unit_state[idx]):
+            moveServo(idx)
+        _prev_unit_state[idx] = _unit_state[idx]
+        
     _anime += 1
     return
-1
+
+#--------------------------------------------------------------------------------------------
+def moveServo(idx):
+    global _unit_state
+    global _pwm
+    print 'servo {0} to {1}'.format(idx, _unit_state[idx])
+    
+    servoMin = 150  # Min pulse length out of 4096
+    servoMax = 600  # Max pulse length out of 4096
+    if _unit_state[idx]:
+        _pwm.setPWM(idx, 0, servoMin)
+    else:
+        _pwm.setPWM(idx, 0, servoMax)
+
 #--------------------------------------------------------------------------------------------
 def checkPlace():
 
