@@ -9,7 +9,7 @@ _log = open('./gps.log', 'r')
 
 _unit_state = [False] * 16
 _anime = 0
-_anime_type = 0
+_anime_type = 2
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -54,9 +54,7 @@ def findPlace(lon, lat):
 def isSwitchPressed():
 
     input_state = GPIO.input(18)
-    if input_state == False:
-        print('Button Pressed')
-    return False
+    return not(input_state)
 
 
 #--------------------------------------------------------------------------------------------
@@ -64,25 +62,45 @@ def animate():
     global _unit_state
     global _anime
     global _anime_type
+    i = 0
 
+    speed = 3
     if _anime_type == 0: #wave
-        speed = 400 #todo
         if _anime % speed == 0:
             i = (_anime / speed) % 16
-            _unit_state[i] = True
-            i -= 3
-            if i < 0: i+16
-            _unit_state[i] = False
-    elif _anime_type == 1: #rwave
-        speed = 400 #todo
-        if _anime % speed == 0:
-            i = (_anime / speed) % 16
-            i = 15-i
-            _unit_state[i] = True
-            i -= 3
-            if i < 0: i+16
-            _unit_state[i] = False
+            if i==0 and _anime > speed * 16 * 4:
+                resetState()
+            else:
+                _unit_state[i] = True
+                i -= 3
+                if i < 0: i += 16
+                _unit_state[i] = False
 
+    elif _anime_type == 1: #rwave
+        if _anime % speed == 0:
+            i = (_anime / speed) % 16
+            if i==0 and _anime > speed * 16 * 4:
+                resetState()
+            else:
+                i = 15-i
+                _unit_state[i] = True
+                i += 3
+                if i > 15: i -= 16
+                _unit_state[i] = False
+
+    elif _anime_type == 2: #hit
+        speed = 20
+        if _anime % speed == 0:
+            if _anime > speed * 6:
+                resetState()
+            else:
+                for idx in range(0, len(_unit_state)):
+                    if (idx+(_anime / speed)) %2 == 0:
+                        _unit_state[idx] = True
+                    else:
+                        _unit_state[idx] = False
+                    
+    
 
     #print _unit_state
     for st in _unit_state:
@@ -105,13 +123,25 @@ def checkPlace():
 
 
 #--------------------------------------------------------------------------------------------
+def resetState():
+    global _anime
+    global _anime_type
+    global _unit_state 
+
+    _unit_state = [False] * 16
+    _anime = 0
+    _anime_type = -1
+    print 'resetState'
+    return
+
+#--------------------------------------------------------------------------------------------
 def changeState():
     global _anime
     global _anime_type
 
     _anime = 0
     _anime_type = random.randint(0, 1) #todo
-    print 'changeState'
+    print 'changeState {0}'.format(_anime_type) 
     return
 
 #--------------------------------------------------------------------------------------------
@@ -129,7 +159,7 @@ def mainloop():
 
     switch = isSwitchPressed()
     if switch:
-        print 'switch pressed'
+        #print 'switch pressed'
         changeState()
         playSound(-1)
     else:
@@ -142,7 +172,7 @@ def mainloop():
                 changeState()
                 playSound(_p_idx)
 
-    #animate()
+    animate()
     return
 
 #--------------------------------------------------------------------------------------------
@@ -155,7 +185,9 @@ def init():
 init()
 while True:
     mainloop()
+    time.sleep(1.0/20.0) #20fps
 
+#--------------------------------------------------------------------------------------------
 
 
     
