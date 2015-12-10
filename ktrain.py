@@ -16,6 +16,7 @@ _unit_state = [False] * 16
 _prev_unit_state = [True] * 16
 _anime = 0
 _anime_type = -1
+_switch = False
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -78,9 +79,16 @@ def findPlace(lon, lat):
 #--------------------------------------------------------------------------------------------
 def isSwitchPressed():
 
-    input_state = GPIO.input(18)
-    return not(input_state)
+    global _switch
+    input_state = not(GPIO.input(18))
 
+    if _switch == False and input_state == True:
+        _switch = input_state
+        return True
+    else:
+        _switch = input_state
+        return False
+ 
 
 #--------------------------------------------------------------------------------------------
 def animate():
@@ -220,8 +228,10 @@ def resetState():
     global _anime
     global _anime_type
     global _unit_state 
+    global _prev_unit_state 
 
     _unit_state = [False] * 16
+    _prev_unit_state = [True] * 16
     _anime = 0
     _anime_type = -1
     print 'resetState'
@@ -229,12 +239,24 @@ def resetState():
 
 #--------------------------------------------------------------------------------------------
 def changeState():
+    
+    '''
     global _anime
     global _anime_type
+    global _unit_state 
+    global _prev_unit_state 
 
     _anime = 0
+    _unit_state = [False] * 16
+    _prev_unit_state = [True] * 16
+    '''
+
+    global _anime_type
+
+    resetState()
     _anime_type = random.randint(0, 5) #todo
     print 'changeState {0}'.format(_anime_type) 
+
     return
 
 #--------------------------------------------------------------------------------------------
