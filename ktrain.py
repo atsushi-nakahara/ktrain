@@ -183,14 +183,14 @@ def animate():
 def moveServo(idx):
     global _unit_state
     global _pwm
-    print 'servo {0} to {1}'.format(idx, _unit_state[idx])
+    #print 'servo {0} to {1}'.format(idx, _unit_state[idx])
     
     servoMin = 150  # Min pulse length out of 4096
     servoMax = 600  # Max pulse length out of 4096
     if _unit_state[idx]:
-        _pwm.setPWM(idx, 0, servoMin)
-    else:
         _pwm.setPWM(idx, 0, servoMax)
+    else:
+        _pwm.setPWM(idx, 0, servoMin)
 
 #--------------------------------------------------------------------------------------------
 def checkPlace():
