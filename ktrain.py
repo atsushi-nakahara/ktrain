@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from Adafruit_PWM_Servo_Driver import PWM
+import os
 import math
 import random
 import RPi.GPIO as GPIO
@@ -7,10 +8,11 @@ import time
 from gps import *
 import threading
 
+_path = '/home/pi/ktrain/'
 _debug = True
 _counter = 0
 _p_idx = -1
-_log = open('./gps.log', 'r')
+_log = open('{0}gps.log'.format(_path), 'r')
 
 _unit_state = [False] * 16
 _prev_unit_state = [True] * 16
@@ -62,9 +64,10 @@ def getDistance(lon_a, lat_a, lon_b, lat_b):
 #--------------------------------------------------------------------------------------------
 def findPlace(lon, lat):
 
+    global _path
     #print '{0} {1}'.format(lon, lat)
 
-    places = open('./places.csv', 'r')
+    places = open('{0}places.csv'.format(_path), 'r')
     for place in places:
         #print place
         pos = place.split(',')
@@ -260,7 +263,9 @@ def changeState():
     return
 
 #--------------------------------------------------------------------------------------------
-def playSound(_p_idx):
+def playSound(p_idx):
+    global _path
+    os.system('omxplayer {0}test.mp3 &'.format(_path, p_idx))
     return
 
 #--------------------------------------------------------------------------------------------
