@@ -23,7 +23,8 @@ _switch = False
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-_pwm = PWM(0x40)
+_pwm = PWM(0x40, False)
+_pwm.setPWMFreq(60)  # Set frequency to 60 Hzw
 
 #--------------------------------------------------------------------------------------------
 class GpsPoller(threading.Thread):
@@ -101,11 +102,11 @@ def animate():
     global _anime_type
     i = 0
 
-    speed = 3
+    speed = 8
     if _anime_type == 0: #wave
         if _anime % speed == 0:
             i = (_anime / speed) % 16
-            if i==0 and _anime > speed * 16 * 4:
+            if i==0 and _anime > speed * 16 * 2:
                 resetState()
             else:
                 _unit_state[i] = True
@@ -116,7 +117,7 @@ def animate():
     elif _anime_type == 1: #rwave
         if _anime % speed == 0:
             i = (_anime / speed) % 16
-            if i==0 and _anime > speed * 16 * 4:
+            if i==0 and _anime > speed * 16 * 2:
                 resetState()
             else:
                 i = 15-i
@@ -126,9 +127,9 @@ def animate():
                 _unit_state[i] = False
 
     elif _anime_type == 2: #hit
-        speed = 20
+        speed = 40
         if _anime % speed == 0:
-            if _anime > speed * 6:
+            if _anime > speed * 4:
                 resetState()
             else:
                 for idx in range(0, len(_unit_state)):
@@ -138,9 +139,10 @@ def animate():
                         _unit_state[idx] = False
                     
     elif _anime_type == 3: #cross
+        speed = 10
         if _anime % speed == 0:
             i = (_anime / speed) % 8
-            if i==0 and _anime > speed * 8 * 4:
+            if i==0 and _anime > speed * 8 * 2:
                 resetState()
             else:
                 _unit_state[i] = True
@@ -151,9 +153,10 @@ def animate():
                 _unit_state[15-i] = False
 
     elif _anime_type == 4: #rcross
+        speed = 10
         if _anime % speed == 0:
             i = (_anime / speed) % 8
-            if i==0 and _anime > speed * 8 * 4:
+            if i==0 and _anime > speed * 8 * 2:
                 resetState()
             else:
                 i = 7-i
@@ -165,7 +168,7 @@ def animate():
                 _unit_state[15-i] = False
 
     elif _anime_type == 5: #random
-        speed = 10
+        speed = 30
         if _anime % speed == 0:
             if _anime > speed * 10:
                 resetState()
@@ -176,7 +179,7 @@ def animate():
                     else:
                         _unit_state[idx] = False
 
-    #print _unit_state
+
     for st in _unit_state:
         if st == True: print '*',
         if st == False: print '_',
@@ -197,7 +200,7 @@ def moveServo(idx):
     #print 'servo {0} to {1}'.format(idx, _unit_state[idx])
     
     servoMin = 150  # Min pulse length out of 4096
-    servoMax = 1100  # Max pulse length out of 4096
+    servoMax = 500  # Max pulse length out of 4096
     if _unit_state[idx]:
         _pwm.setPWM(idx, 0, servoMax)
     else:
@@ -265,7 +268,12 @@ def changeState():
 #--------------------------------------------------------------------------------------------
 def playSound(p_idx):
     global _path
-    os.system('omxplayer {0}test.mp3 &'.format(_path, p_idx))
+    #os.system('omxplayer {0}test.mp3 &'.format(_path, p_idx))
+    if p_idx > 0:
+        os.system('omxplayer {0}sounds/{1}.wav &'.format(_path, p_idx))
+    else:
+        rand = random.randint(1, 6)
+        os.system('omxplayer {0}sounds/b{1}.wav &'.format(_path, rand))
     return
 
 #--------------------------------------------------------------------------------------------
