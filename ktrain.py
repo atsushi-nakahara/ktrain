@@ -7,9 +7,10 @@ import RPi.GPIO as GPIO
 import time
 from gps import *
 import threading
+import logging
 
 _path = '/home/pi/ktrain/'
-_debug = True
+_debug = False
 _counter = 0
 _p_idx = -1
 _log = open('{0}gps.log'.format(_path), 'r')
@@ -26,6 +27,14 @@ GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 _pwm = PWM(0x40, False)
 _pwm.setPWMFreq(60)  # Set frequency to 60 Hzw
+
+#logging.basicConfig(format='%(levelname)s:%(message)s', filename='{0}ktrain.log'.format(_path) ,level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename='{0}ktrain.log'.format(_path),
+    format="%(asctime)s %(levelname)s %(message)s")
+
+logging.info('start ktrain...')
 
 #--------------------------------------------------------------------------------------------
 class GpsPoller(threading.Thread):
@@ -45,6 +54,7 @@ class GpsPoller(threading.Thread):
                 time.sleep(5) # tune this, you might not get values that quickly
         except StopIteration:
             pass
+
 
 #--------------------------------------------------------------------------------------------
 def getDistance(lon_a, lat_a, lon_b, lat_b):
@@ -89,6 +99,7 @@ def isSwitchPressed():
 
     if _switch == False and input_state == True:
         _switch = input_state
+        logging.info('switch pressed...')
         return True
     else:
         _switch = input_state
@@ -289,7 +300,8 @@ def mainloop():
             p_idx = checkPlace()
             if p_idx > 0 and _p_idx != p_idx:
                 _p_idx = p_idx
-                print 'place changed {0}'.format(_p_idx)
+                #print 'place changed {0}'.format(_p_idx)
+                logging.info('place changed {0}'.format(_p_idx))
                 changeState()
                 playSound(_p_idx)
 
