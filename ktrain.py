@@ -16,7 +16,7 @@ _counter = 0
 _p_idx = -1
 _log = open('{0}gps.log'.format(_path), 'r')
 
-_unit_num = 12 #org 16
+_unit_num = 16 #TODO
 _unit_state = [False] * _unit_num
 _prev_unit_state = [True] * _unit_num
 _anime = 0
@@ -26,8 +26,10 @@ _switch = False
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-_pwm = PWM(0x40, False)
-_pwm.setPWMFreq(60)  # Set frequency to 60 Hzw
+#_pwm = PWM(0x40, False)
+_pwm = [PWM(0x40, False), PWM(0x41, False)]
+_pwm[0].setPWMFreq(60)  # Set frequency to 60 Hzw
+_pwm[1].setPWMFreq(60)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -201,23 +203,24 @@ def animate():
                         _unit_state[idx] = False
 
 
-    '''
+    
     for st in _unit_state:
         if st == True: print '*',
         if st == False: print '_',
     print ''
-    '''
+    
 
     for idx in range(0, len(_unit_state)):
         if  not(_unit_state[idx] == _prev_unit_state[idx]):
-            moveServo(idx)
+            moveServo(0, idx)
+            moveServo(1, idx)
         _prev_unit_state[idx] = _unit_state[idx]
         
     _anime += 1
     return
 
 #--------------------------------------------------------------------------------------------
-def moveServo(idx):
+def moveServo(group, idx):
     global _unit_state
     global _pwm
     #print 'servo {0} to {1}'.format(idx, _unit_state[idx])
@@ -225,9 +228,9 @@ def moveServo(idx):
     servoMin = 150  # Min pulse length out of 4096
     servoMax = 400  # Max pulse length out of 4096
     if _unit_state[idx]:
-        _pwm.setPWM(idx, 0, servoMax)
+        _pwm[group].setPWM(idx, 0, servoMax)
     else:
-        _pwm.setPWM(idx, 0, servoMin)
+        _pwm[group].setPWM(idx, 0, servoMin)
 
 #--------------------------------------------------------------------------------------------
 def checkPlace():
