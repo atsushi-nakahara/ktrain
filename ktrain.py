@@ -8,6 +8,7 @@ import time
 from gps import *
 import threading
 import logging
+import Queue
 
 _path = '/home/pi/ktrain/'
 _debug = False
@@ -28,13 +29,16 @@ GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 _pwm = PWM(0x40, False)
 _pwm.setPWMFreq(60)  # Set frequency to 60 Hzw
 
-#logging.basicConfig(format='%(levelname)s:%(message)s', filename='{0}ktrain.log'.format(_path) ,level=logging.DEBUG)
 logging.basicConfig(
     level=logging.DEBUG,
     filename='{0}ktrain.log'.format(_path),
     format="%(asctime)s %(levelname)s %(message)s")
 
 logging.info('start ktrain...')
+os.system('omxplayer {0}sounds/b{1}.wav &'.format(_path, 4))
+
+_queue = Queue.Queue(10)
+_places = open('{0}places.csv'.format(_path), 'r')
 
 #--------------------------------------------------------------------------------------------
 class GpsPoller(threading.Thread):
@@ -48,10 +52,12 @@ class GpsPoller(threading.Thread):
         return self.current_value
 
     def run(self):
+        global _queue        
         try:
             while True:
-                self.current_value = self.session.next()
-                time.sleep(5) # tune this, you might not get values that quickly
+                #self.current_value = self.session.next()
+                _queue.put(self.session.next())
+                time.sleep(1) # tune this, you might not get values that quickly
         except StopIteration:
             pass
 
@@ -77,16 +83,18 @@ def getDistance(lon_a, lat_a, lon_b, lat_b):
 def findPlace(lon, lat):
 
     global _path
+    global _places
     #print '{0} {1}'.format(lon, lat)
 
-    places = open('{0}places.csv'.format(_path), 'r')
-    for place in places:
+    #places = open('{0}places.csv'.format(_path), 'r')
+    _places.seek(0)
+    for place in _places:
         #print place
         pos = place.split(',')
         #print pos
         d = getDistance(float(lon), float(lat), float(pos[2]), float(pos[3]));
         #print d
-        if d < 200:
+        if d < 800:#org 200
             #print pos[1]
             return int(pos[0])
     return
@@ -193,10 +201,12 @@ def animate():
                         _unit_state[idx] = False
 
 
+    '''
     for st in _unit_state:
         if st == True: print '*',
         if st == False: print '_',
     print ''
+    '''
 
     for idx in range(0, len(_unit_state)):
         if  not(_unit_state[idx] == _prev_unit_state[idx]):
@@ -213,7 +223,7 @@ def moveServo(idx):
     #print 'servo {0} to {1}'.format(idx, _unit_state[idx])
     
     servoMin = 150  # Min pulse length out of 4096
-    servoMax = 500  # Max pulse length out of 4096
+    servoMax = 400  # Max pulse length out of 4096
     if _unit_state[idx]:
         _pwm.setPWM(idx, 0, servoMax)
     else:
@@ -226,6 +236,7 @@ def checkPlace():
     global _log
     global _session
     global _gpsp
+    global _queue
 
     if _debug:
         line = _log.readline()
@@ -235,7 +246,9 @@ def checkPlace():
         else :
             return -1
     else:
-        report = _gpsp.get_current_value();
+        #report = _gpsp.get_current_value();
+        report = None
+        if _queue.empty()==False: report = _queue.get(False); #print report;
         #report = _session.next()
         if report and report.keys()[0] == 'epx' :
             return findPlace(report['lon'], report['lat'])
@@ -295,7 +308,11 @@ def mainloop():
         changeState()
         playSound(-1)
     else:
-        if _counter % 5 == 0: #TODO
+        if _counter % (20*60*2) == 0:
+            changeState()
+            playSound(-1)
+        '''
+        if _counter % 2 == 0: #TODO
             #print 'check position'
             p_idx = checkPlace()
             if p_idx > 0 and _p_idx != p_idx:
@@ -304,7 +321,7 @@ def mainloop():
                 logging.info('place changed {0}'.format(_p_idx))
                 changeState()
                 playSound(_p_idx)
-
+        '''
     animate()
     return
 
