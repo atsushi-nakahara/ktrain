@@ -11,7 +11,7 @@ import logging
 import Queue
 
 _path = '/home/pi/ktrain/'
-_debug = False
+_debug = True
 _counter = 0
 _p_idx = -1
 _log = open('{0}gps.log'.format(_path), 'r')
@@ -203,12 +203,12 @@ def animate():
                         _unit_state[idx] = False
 
 
-    
+    '''
     for st in _unit_state:
         if st == True: print '*',
         if st == False: print '_',
     print ''
-    
+    '''
 
     for idx in range(0, len(_unit_state)):
         if  not(_unit_state[idx] == _prev_unit_state[idx]):
@@ -314,17 +314,16 @@ def mainloop():
         if _counter % (20*60*2) == 0:
             changeState()
             playSound(-1)
-        '''
-        if _counter % 2 == 0: #TODO
-            #print 'check position'
+        
+        if _counter % 20 == 0: #TODO
+            print 'check position'
             p_idx = checkPlace()
             if p_idx > 0 and _p_idx != p_idx:
                 _p_idx = p_idx
-                #print 'place changed {0}'.format(_p_idx)
+                print 'place changed {0}'.format(_p_idx)
                 logging.info('place changed {0}'.format(_p_idx))
                 changeState()
                 playSound(_p_idx)
-        '''
     animate()
     return
 
