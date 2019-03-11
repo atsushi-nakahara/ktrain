@@ -11,10 +11,10 @@ import logging
 import Queue
 
 _path = '/home/pi/ktrain/'
-_debug = True
+_debug = False
 _counter = 0
 _p_idx = -1
-_log = open('{0}gps.log'.format(_path), 'r')
+_log = open('{0}gps_nagara.log'.format(_path), 'r')
 
 _unit_num = 16 #TODO
 _unit_state = [False] * _unit_num
@@ -39,7 +39,7 @@ logging.basicConfig(
 logging.info('start ktrain...')
 os.system('omxplayer {0}sounds/b{1}.wav &'.format(_path, 4))
 
-_queue = Queue.Queue(10)
+_queue = Queue.Queue(1) #TODO
 _places = open('{0}places.csv'.format(_path), 'r')
 
 #--------------------------------------------------------------------------------------------
@@ -47,11 +47,14 @@ class GpsPoller(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
-        self.session = gps(mode=WATCH_ENABLE)
+        #self.session = gps(mode=WATCH_ENABLE)
+        self.session = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
         self.current_value = None
 
+    '''
     def get_current_value(self):
         return self.current_value
+    '''
 
     def run(self):
         global _queue        
@@ -59,7 +62,7 @@ class GpsPoller(threading.Thread):
             while True:
                 #self.current_value = self.session.next()
                 _queue.put(self.session.next())
-                time.sleep(1) # tune this, you might not get values that quickly
+                time.sleep(0.5) # tune this, you might not get values that quickly
         except StopIteration:
             pass
 
@@ -254,8 +257,10 @@ def checkPlace():
         if _queue.empty()==False: report = _queue.get(False); #print report;
         #report = _session.next()
         if report and report.keys()[0] == 'epx' :
+            print("%f, %f, %s" % (report['lon'], report['lat'], report['time']))
             return findPlace(report['lon'], report['lat'])
         else:
+            print('no queue...')
             return -1
 
 #--------------------------------------------------------------------------------------------
@@ -315,8 +320,8 @@ def mainloop():
             changeState()
             playSound(-1)
         
-        if _counter % 20 == 0: #TODO
-            print 'check position'
+        if _counter % 5 == 0: #TODO
+            #print 'check position'
             p_idx = checkPlace()
             if p_idx > 0 and _p_idx != p_idx:
                 _p_idx = p_idx
