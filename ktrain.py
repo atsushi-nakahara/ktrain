@@ -16,7 +16,7 @@ _counter = 0
 _p_idx = -1
 _log = open('{0}gps_nagara.log'.format(_path), 'r')
 
-_unit_num = 16 #TODO
+_unit_num = 10 #TODO
 _unit_state = [False] * _unit_num
 _prev_unit_state = [True] * _unit_num
 _anime = 0
@@ -28,7 +28,7 @@ GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 #_pwm = PWM(0x40, False)
 _pwm = [PWM(0x40, False), PWM(0x41, False)]
-_pwm[0].setPWMFreq(60)  # Set frequency to 60 Hzw
+_pwm[0].setPWMFreq(60) 
 _pwm[1].setPWMFreq(60)
 
 logging.basicConfig(
@@ -39,7 +39,7 @@ logging.basicConfig(
 logging.info('start ktrain...')
 os.system('omxplayer {0}sounds/b{1}.wav &'.format(_path, 4))
 
-_queue = Queue.Queue(1) #TODO
+_queue = Queue.Queue(1)
 _places = open('{0}places.csv'.format(_path), 'r')
 
 #--------------------------------------------------------------------------------------------
@@ -50,11 +50,6 @@ class GpsPoller(threading.Thread):
         #self.session = gps(mode=WATCH_ENABLE)
         self.session = gps(mode=WATCH_ENABLE|WATCH_NEWSTYLE)
         self.current_value = None
-
-    '''
-    def get_current_value(self):
-        return self.current_value
-    '''
 
     def run(self):
         global _queue        
@@ -89,7 +84,7 @@ def findPlace(lon, lat):
 
     global _path
     global _places
-    #print '{0} {1}'.format(lon, lat)
+    print '{0} {1}'.format(lon, lat)
 
     #places = open('{0}places.csv'.format(_path), 'r')
     _places.seek(0)
@@ -99,7 +94,7 @@ def findPlace(lon, lat):
         #print pos
         d = getDistance(float(lon), float(lat), float(pos[2]), float(pos[3]));
         #print d
-        if d < 800:#org 200
+        if d < 400:
             #print pos[1]
             return int(pos[0])
     return
@@ -257,10 +252,10 @@ def checkPlace():
         if _queue.empty()==False: report = _queue.get(False); #print report;
         #report = _session.next()
         if report and report.keys()[0] == 'epx' :
-            print("%f, %f, %s" % (report['lon'], report['lat'], report['time']))
+            #print("%f, %f, %s" % (report['lon'], report['lat'], report['time']))
             return findPlace(report['lon'], report['lat'])
         else:
-            print('no queue...')
+            #print('no queue...')
             return -1
 
 #--------------------------------------------------------------------------------------------
@@ -316,7 +311,7 @@ def mainloop():
         changeState()
         playSound(-1)
     else:
-        if _counter % (20*60*2) == 0:
+        if _counter % (20*60*10) == 0:
             changeState()
             playSound(-1)
         
@@ -351,4 +346,3 @@ while True:
 
 
     
-
